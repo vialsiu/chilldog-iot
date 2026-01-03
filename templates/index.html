@@ -1,14 +1,39 @@
 <!DOCTYPE html>
-<html lang="">
-  <head>
-    <meta charset="utf-8">
-    <title>Chilldog</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
-  </head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Chilldog</title>
+
+  <!-- Favicon -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="{{ url_for('static', filename='images/icon.png') }}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/styles.css') }}"
+  >
+</head>
 
   <body>
     <div class="card">
-      <h1>Chilldog</h1>
+
+      <!-- Header with dog image -->
+      <header class="header">
+        <div class="header-left">
+          <img
+            class="logo"
+            src="{{ url_for('static', filename='images/chilldog.png') }}"
+            alt="Chilldog logo"
+          />
+          <div>
+            <h1>Chilldog</h1>
+            <p class="subtitle">Smart fan & energy saver</p>
+          </div>
+        </div>
+      </header>
 
       <div class="row">
         <div><strong>Temperature:</strong> <span id="temp">--</span> °C</div>
@@ -49,9 +74,10 @@
 
         <button id="btnEnergy" type="button">Apply</button>
       </div>
+
     </div>
 
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.6.3.min.js"></script>
-    <script src="/static/js/app.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   </body>
 </html>
