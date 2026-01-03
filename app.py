@@ -1,9 +1,12 @@
-from flask import Flask, jsonify, request
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request, render_template
 
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
+
+# Import your blueprint factory
+from routes.api import init_api
 
 load_dotenv()
 
@@ -11,6 +14,7 @@ app = Flask(__name__)
 
 DEVICE_ID = os.getenv("DEVICE_ID", "pi-001")
 COMMANDS_CHANNEL = f"chilldog.commands.{DEVICE_ID}"
+STATUS_CHANNEL = f"chilldog.status.{DEVICE_ID}"
 
 pnconfig = PNConfiguration()
 pnconfig.publish_key = os.getenv("PUBNUB_PUBLISH_KEY")
@@ -20,33 +24,20 @@ pnconfig.ssl = True
 
 pubnub = PubNub(pnconfig)
 
+# Register API routes (fan, auto, target-temp, energy-saver)
+app.register_blueprint(init_api(pubnub, COMMANDS_CHANNEL), url_prefix="")
+
 @app.get("/")
 def home():
-    return "Chilldog PubNub running"
+    return render_template("index.html")
 
-@app.post("/api/test-publish")
-def test_publish():
-    message = {"source": "chilldog-web", "message": "Hello from Flask via PubNub"}
-    envelope = pubnub.publish().channel("chilldog.test").message(message).sync()
-    return jsonify({"status": "sent", "timetoken": envelope.result.timetoken})
-
-@app.post("/api/fan")
-def set_fan():
-    data = request.get_json(force=True)
-    fan_on = bool(data.get("on", False))
-
-    message = {
-        "type": "SET_FAN",
-        "on": fan_on,
-        "source": "chilldog-web"
-    }
-
-    envelope = pubnub.publish().channel(COMMANDS_CHANNEL).message(message).sync()
+@app.get("/api/info")
+def api_info():
+    # Handy for debugging that config loaded correctly
     return jsonify({
-        "status": "sent",
-        "channel": COMMANDS_CHANNEL,
-        "timetoken": envelope.result.timetoken,
-        "message": message
+        "deviceId": DEVICE_ID,
+        "commandsChannel": COMMANDS_CHANNEL,
+        "statusChannel": STATUS_CHANNEL
     })
 
 if __name__ == "__main__":

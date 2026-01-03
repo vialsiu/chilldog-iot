@@ -1,13 +1,57 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="">
   <head>
+    <meta charset="utf-8">
     <title>Chilldog</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
   </head>
+
   <body>
     <div class="card">
       <h1>Chilldog</h1>
-      <p>Flask web app is running</p>
+
+      <div class="row">
+        <div><strong>Temperature:</strong> <span id="temp">--</span> °C</div>
+        <div><strong>Humidity:</strong> <span id="hum">--</span> %</div>
+      </div>
+
+      <div class="row">
+        <div><strong>Fan:</strong> <span id="fan">--</span></div>
+        <div><strong>Mode:</strong> <span id="mode">--</span></div>
+      </div>
+
+      <hr>
+
+      <div class="controls">
+        <button id="btnOn" type="button">Fan ON</button>
+        <button id="btnOff" type="button">Fan OFF</button>
+        <button id="btnAuto" type="button">AUTO</button>
+      </div>
+
+      <div class="controls">
+        <label>Target Temp:</label>
+        <input id="targetTemp" type="number" step="0.5" value="24">
+        <button id="btnSetTemp" type="button">Set</button>
+      </div>
+
+      <div class="controls">
+        <label>
+          <input id="energyEnabled" type="checkbox">
+          Energy Saver
+        </label>
+
+        <select id="timeoutSec">
+          <option value="30">30s</option>
+          <option value="60">1m</option>
+          <option value="120" selected>2m</option>
+          <option value="300">5m</option>
+        </select>
+
+        <button id="btnEnergy" type="button">Apply</button>
+      </div>
     </div>
+
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.6.3.min.js"></script>
+    <script src="/static/js/app.js"></script>
   </body>
 </html>
