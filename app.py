@@ -5,7 +5,6 @@ from flask import Flask, jsonify, request, render_template
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
 
-# Import your blueprint factory
 from routes.api import init_api
 
 load_dotenv()
@@ -24,7 +23,6 @@ pnconfig.ssl = True
 
 pubnub = PubNub(pnconfig)
 
-# Register API routes (fan, auto, target-temp, energy-saver)
 app.register_blueprint(init_api(pubnub, COMMANDS_CHANNEL), url_prefix="")
 
 @app.get("/")
@@ -33,11 +31,11 @@ def home():
 
 @app.get("/api/info")
 def api_info():
-    # Handy for debugging that config loaded correctly
     return jsonify({
         "deviceId": DEVICE_ID,
         "commandsChannel": COMMANDS_CHANNEL,
-        "statusChannel": STATUS_CHANNEL
+        "statusChannel": STATUS_CHANNEL,
+        "subscribeKey": pnconfig.subscribe_key
     })
 
 if __name__ == "__main__":

@@ -1,83 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Chilldog</title>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chilldog</title>
 
-  <!-- Favicon -->
-  <link
-    rel="icon"
-    type="image/png"
-    href="{{ url_for('static', filename='images/icon.png') }}"
-  >
-
-  <link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/styles.css') }}"
-  >
-</head>
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='images/icon.png') }}"
+    >
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    >
+  </head>
 
   <body>
-    <div class="card">
-
-      <!-- Header with dog image -->
-      <header class="header">
-        <div class="header-left">
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
           <img
-            class="logo"
+            class="brand-logo"
             src="{{ url_for('static', filename='images/chilldog.png') }}"
-            alt="Chilldog logo"
-          />
-          <div>
-            <h1>Chilldog</h1>
-            <p class="subtitle">Smart fan & energy saver</p>
+            alt="Chilldog"
+          >
+          <span class="brand-name">CHILLDOG</span>
+        </div>
+
+        <div class="auth">
+          <a class="btn btn-ghost" href="/login">Log In</a>
+          <a class="btn btn-solid" href="/signup">Get Started</a>
+          <!-- when logged in it should be smth like  this i need to do a login func
+               <a class="btn btn-ghost" href="/logout">Log Out</a>
+          -->
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="shell">
+        <div class="hero">
+          <div class="hero-left">
+            <h1>Your Ultimate Temperature<br>Management Solution</h1>
+            <p>
+              Monitor and control your environment for free. Intuitive dashboard, smart features.
+            </p>
+          </div>
+
+          <div class="hero-right">
+            <div class="hero-badges">
+              <span class="badge">DHT22</span>
+              <span class="badge">PIR</span>
+              <span class="badge">PubNub</span>
+            </div>
+
+            <div class="status-pill" aria-live="polite">
+              <span class="status-dot" id="connDot"></span>
+              <span id="connText">Listening…</span>
+            </div>
           </div>
         </div>
-      </header>
 
-      <div class="row">
-        <div><strong>Temperature:</strong> <span id="temp">--</span> °C</div>
-        <div><strong>Humidity:</strong> <span id="hum">--</span> %</div>
-      </div>
+        <div class="tiles">
+          <!-- TILE 1 HERE -->
+          <section class="tile tile-white">
+            <div class="tile-head">
+              <h2>Live climate</h2>
+              <span class="chip">Sensor</span>
+            </div>
 
-      <div class="row">
-        <div><strong>Fan:</strong> <span id="fan">--</span></div>
-        <div><strong>Mode:</strong> <span id="mode">--</span></div>
-      </div>
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="metric-label">Temperature</div>
+                <div class="metric-value"><span id="temp">--</span><span class="unit">°C</span></div>
+              </div>
 
-      <hr>
+              <div class="metric">
+                <div class="metric-label">Humidity</div>
+                <div class="metric-value"><span id="hum">--</span><span class="unit">%</span></div>
+              </div>
 
-      <div class="controls">
-        <button id="btnOn" type="button">Fan ON</button>
-        <button id="btnOff" type="button">Fan OFF</button>
-        <button id="btnAuto" type="button">AUTO</button>
-      </div>
+              <div class="metric small">
+                <div class="metric-label">Fan</div>
+                <div class="metric-subvalue" id="fan">--</div>
+              </div>
 
-      <div class="controls">
-        <label>Target Temp:</label>
-        <input id="targetTemp" type="number" step="0.5" value="24">
-        <button id="btnSetTemp" type="button">Set</button>
-      </div>
+              <div class="metric small">
+                <div class="metric-label">Mode</div>
+                <div class="metric-subvalue" id="mode">--</div>
+              </div>
+            </div>
+          </section>
 
-      <div class="controls">
-        <label>
-          <input id="energyEnabled" type="checkbox">
-          Energy Saver
-        </label>
+          <!-- TILE 2 HERE ANIMATED SVG LIKE ON YT VID -->
+          <section class="tile tile-dark fan-tile" id="fanTile">
+            <div class="tile-head">
+              <h2>Fan</h2>
+              <span class="chip chip-dark" id="fanTag">OFF</span>
+            </div>
 
-        <select id="timeoutSec">
-          <option value="30">30s</option>
-          <option value="60">1m</option>
-          <option value="120" selected>2m</option>
-          <option value="300">5m</option>
-        </select>
+            <div class="fan-visual" aria-hidden="true">
+              <svg class="fan-svg" viewBox="0 0 200 200" role="img" aria-label="Fan icon">
+                <circle cx="100" cy="100" r="14" class="fan-hub"></circle>
+                <g class="fan-blades">
+                  <path d="M100 26c22 0 34 18 28 34-6 16-26 20-48 10-10-4-18-10-18-18 0-14 18-26 38-26z" class="fan-blade"/>
+                  <path d="M174 100c0 22-18 34-34 28-16-6-20-26-10-48 4-10 10-18 18-18 14 0 26 18 26 38z" class="fan-blade"/>
+                  <path d="M100 174c-22 0-34-18-28-34 6-16 26-20 48-10 10 4 18 10 18 18 0 14-18 26-38 26z" class="fan-blade"/>
+                  <path d="M26 100c0-22 18-34 34-28 16 6 20 26 10 48-4 10-10 18-18 18-14 0-26-18-26-38z" class="fan-blade"/>
+                </g>
+                <circle cx="100" cy="100" r="78" class="fan-ring"></circle>
+              </svg>
+            </div>
 
-        <button id="btnEnergy" type="button">Apply</button>
-      </div>
+            <div class="btn-row">
+              <button class="btn btn-ghost" id="btnOn" type="button">Turn ON</button>
+              <button class="btn btn-ghost" id="btnOff" type="button">Turn OFF</button>
+              <button class="btn btn-ghost" id="btnAuto" type="button">AUTO</button>
+            </div>
 
-    </div>
+          </section>
+
+          <!-- TILE 3 -->
+          <section class="tile tile-white" id="thresholdsTile">
+          <div class="tile-head">
+            <h2>Temperature thresholds</h2>
+            <span class="chip">°C</span>
+          </div>
+
+          <div class="form-col">
+            <div class="form-row">
+              <label class="label" for="onTemp">Turn fan ON at</label>
+              <input class="input" id="onTemp" type="number" step="0.5" value="24.0">
+            </div>
+
+            <div class="form-row">
+              <label class="label" for="offTemp">Turn fan OFF at</label>
+              <input class="input" id="offTemp" type="number" step="0.5" value="23.0">
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-solid" id="btnSetThresholds" type="button">Apply</button>
+            </div>
+
+          </div>
+        </section>
+
+
+          <!-- TILE 4 ENERGY SAV -->
+          <section class="tile tile-white tile-wide" id="energyTile">
+            <div class="tile-head">
+              <h2>Energy saver</h2>
+              <span class="chip">PIR</span>
+            </div>
+
+
+            <div class="toggle-row">
+              <label class="toggle">
+                <input id="energyEnabled" type="checkbox">
+                <span class="toggle-ui"></span>
+                <span class="toggle-text">Enabled</span>
+              </label>
+            </div>
+
+            <div class="timeout-block">
+              <div class="label">Turn off after no motion</div>
+
+              <div class="segmented" role="group" aria-label="Energy saver timeout">
+                <button class="seg-btn" type="button" data-timeout="30">30s</button>
+                <button class="seg-btn" type="button" data-timeout="60">1m</button>
+                <button class="seg-btn is-active" type="button" data-timeout="120">2m</button>
+                <button class="seg-btn" type="button" data-timeout="300">5m</button>
+                <button class="seg-btn" type="button" data-timeout="600">10m</button>
+                <button class="seg-btn" type="button" data-timeout="900">15m</button>
+                <button class="seg-btn" type="button" data-timeout="1800">30m</button>
+              </div>
+
+            </div>
+            <!-- <div class="btn-row">
+              <button class="btn btn-solid" id="btnEnergy" type="button">Apply</button>
+            </div> -->
+
+          </section>
+
+          <!-- TILE 5 PLACEHOLDER IDK WHAT FOR YET  -->
+          <section class="tile tile-dark" id="security">
+            <div class="tile-head">
+              <h2>Security</h2>
+              <span class="chip chip-dark">Planned</span>
+            </div>
+
+            <ul class="list">
+              <li>Login / signup pages</li>
+              <li>PubNub PAM tokens</li>
+              <li>HTTPS (Let’s Encrypt)</li>
+              <li>AWS + Route 53 on chilldog.online</li>
+            </ul>
+
+          </section>
+        </div>
+      </section>
+    </main>
 
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.6.3.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
   </body>
 </html>

@@ -1,66 +1,340 @@
-const deviceId = "pi-001";
-const statusChannel = `chilldog.status.${deviceId}`;
+let selectedTimeoutSec = 120;
 
-const subscribeKey = "sub-c-6196e5ab-b7e4-4e06-ad4b-bc25001b2587";
-const userId = "chilldog-web-ui";
+const editLock = {
+  onTemp: false,
+  offTemp: false,
+  energyEnabled: false,
+  timeout: false,
+};
 
-const pubnub = new PubNub({
-  subscribeKey,
-  userId,
-  ssl: true
-});
+function lock(key) { editLock[key] = true; }
+function unlock(key) { editLock[key] = false; }
 
-function setText(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = value;
+(function initDefaultTimeout() {
+  const active = document.querySelector(".seg-btn.is-active");
+  if (active?.dataset?.timeout) {
+    selectedTimeoutSec = parseInt(active.dataset.timeout, 10);
+  }
+})();
+
+// lock thresholds in my tile 3 while user is editing them
+function lockThresholds() {
+  lock("onTemp");
+  lock("offTemp");
+}
+function unlockThresholds() {
+  unlock("onTemp");
+  unlock("offTemp");
 }
 
-/* here I subscribe to status updates */
-pubnub.addListener({
-  message: function(event) {
-    const msg = event.message;
+["onTemp", "offTemp"].forEach((id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
 
-    if (msg.type !== "STATUS") return;
+  el.addEventListener("focus", lockThresholds);
+  el.addEventListener("input", lockThresholds);
 
-    if (typeof msg.temp !== "undefined") setText("temp", Number(msg.temp).toFixed(1));
-    if (typeof msg.humidity !== "undefined" && msg.humidity !== null) setText("hum", Number(msg.humidity).toFixed(1));
-
-    setText("fan", msg.fanOn ? "ON" : "OFF");
-    setText("mode", msg.mode || "--");
-  }
+    //  unlock after blur if focus didn't go to other input
+  el.addEventListener("blur", () => {
+    setTimeout(() => {
+      const activeId = document.activeElement?.id;
+      if (activeId !== "onTemp" && activeId !== "offTemp") {
+        unlockThresholds();
+      }
+    }, 0);
+  });
 });
 
-pubnub.subscribe({ channels: [statusChannel] });
+// lock energy saver toggle while user is interacting
+const energyEl = document.getElementById("energyEnabled");
+if (energyEl) {
+  energyEl.addEventListener("pointerdown", () => lock("energyEnabled"));
+  energyEl.addEventListener("blur", () => unlock("energyEnabled"));
+}
 
-/* flask api endpoints*/
+// helper is here
 async function postJSON(url, body) {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : null
+    body: JSON.stringify(body || {})
   });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || "Request failed");
+  }
   return res.json();
 }
 
-document.getElementById("btnOn").addEventListener("click", async () => {
-  await postJSON("/api/fan", { on: true });
+// ui helpers
+function setTileLocked(tileId, locked) {
+  const tile = document.getElementById(tileId);
+  if (!tile) return;
+
+  tile.classList.toggle("is-locked", !!locked);
+
+  tile.querySelectorAll("input, button, select, textarea").forEach(el => {
+    el.disabled = !!locked;
+  });
+}
+
+function setManualLocks(isManual) {
+  setTileLocked("thresholdsTile", isManual);
+  setTileLocked("energyTile", isManual);
+  editLock.onTemp = isManual;
+  editLock.offTemp = isManual;
+  editLock.energyEnabled = isManual;
+  editLock.timeout = isManual;
+}
+
+
+
+function setConnection(ok, text) {
+  const dot = document.getElementById("connDot");
+  const label = document.getElementById("connText");
+  if (dot) dot.style.background = ok ? "#16a34a" : "#9ca3af";
+  if (label && text) label.textContent = text;
+}
+
+function setFanButtonState(state) {
+  // state: "on" | "off" | "auto"
+  const btnOn = document.getElementById("btnOn");
+  const btnOff = document.getElementById("btnOff");
+  const btnAuto = document.getElementById("btnAuto");
+
+  [btnOn, btnOff, btnAuto].forEach(b => b?.classList.remove("is-active"));
+
+  if (state === "on") btnOn?.classList.add("is-active");
+  if (state === "off") btnOff?.classList.add("is-active");
+  if (state === "auto") btnAuto?.classList.add("is-active");
+}
+
+function setFanUI(isOn, mode) {
+  const tile = document.getElementById("fanTile");
+  const tag = document.getElementById("fanTag");
+  const fanText = document.getElementById("fan");
+
+  if (fanText) fanText.textContent = isOn ? "ON" : "OFF";
+  if (tag) tag.textContent = isOn ? "ON" : "OFF";
+  if (tile) tile.classList.toggle("is-on", !!isOn);
+
+  // highlight logic is like this
+  // manual mode highlight ON or OFF
+  // otherwise highlight AUTO
+  if ((mode || "").toLowerCase().includes("manual")) {
+    setFanButtonState(isOn ? "on" : "off");
+  } else {
+    setFanButtonState("auto");
+  }
+}
+
+function setModeUI(mode) {
+  const el = document.getElementById("mode");
+  if (el) el.textContent = mode || "--";
+}
+
+function setClimateUI(temp, hum) {
+  const t = document.getElementById("temp");
+  const h = document.getElementById("hum");
+
+  const tempNum = temp == null ? null : parseFloat(temp);
+  const humNum = hum == null ? null : parseFloat(hum);
+
+  if (t) t.textContent = Number.isFinite(tempNum) ? tempNum.toFixed(1) : "--";
+  if (h) h.textContent = Number.isFinite(humNum) ? humNum.toFixed(1) : "--";
+}
+
+function setEnergyUI(enabled, timeoutSec) {
+  const checkbox = document.getElementById("energyEnabled");
+  const toggleText = document.querySelector(".toggle-text");
+
+  if (!editLock.energyEnabled && checkbox && typeof enabled === "boolean") {
+    checkbox.checked = enabled;
+  }
+  if (toggleText) toggleText.textContent = enabled ? "Enabled" : "Disabled";
+
+  if (!editLock.timeout && timeoutSec != null) {
+    selectedTimeoutSec = parseInt(timeoutSec, 10);
+    document.querySelectorAll(".seg-btn").forEach(b => {
+      b.classList.toggle(
+        "is-active",
+        parseInt(b.dataset.timeout, 10) === selectedTimeoutSec
+      );
+    });
+  }
+}
+
+async function applyEnergySaver(enabled) {
+  const timeoutSec = selectedTimeoutSec;
+
+  setEnergyUI(enabled, timeoutSec);
+
+  try {
+    setConnection(true, "Sending…");
+    await postJSON("/api/energy-saver", { enabled, timeoutSec });
+    setConnection(true, "Command sent");
+  } catch (e) {
+    console.error(e);
+    setConnection(false, "Error sending");
+  }
+}
+
+// energy toggle
+document.getElementById("energyEnabled")?.addEventListener("change", async (e) => {
+  const enabled = !!e.target.checked;
+  lock("energyEnabled");
+  lock("timeout");
+
+  await applyEnergySaver(enabled);
+
+  setTimeout(() => {
+    unlock("energyEnabled");
+    unlock("timeout");
+  }, 800);
 });
 
-document.getElementById("btnOff").addEventListener("click", async () => {
-  await postJSON("/api/fan", { on: false });
+// energy timeout buttons
+document.querySelectorAll(".seg-btn").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    lock("timeout");
+
+    document.querySelectorAll(".seg-btn").forEach(b => b.classList.remove("is-active"));
+    btn.classList.add("is-active");
+    selectedTimeoutSec = parseInt(btn.dataset.timeout, 10);
+
+    const enabled = !!document.getElementById("energyEnabled")?.checked;
+
+    if (enabled) {
+      await applyEnergySaver(true);
+    } else {
+      setEnergyUI(false, selectedTimeoutSec);
+    }
+
+    setTimeout(() => unlock("timeout"), 800);
+  });
 });
 
-document.getElementById("btnAuto").addEventListener("click", async () => {
-  await postJSON("/api/fan/auto");
+// FAN CONTROLS START HERE 
+document.getElementById("btnOn")?.addEventListener("click", async () => {
+  try {
+    setFanButtonState("on");
+    setConnection(true, "Sending…");
+    await postJSON("/api/fan", { on: true });
+    setConnection(true, "Command sent");
+  } catch (e) {
+    console.error(e);
+    setConnection(false, "Error sending");
+  }
 });
 
-document.getElementById("btnSetTemp").addEventListener("click", async () => {
-  const val = parseFloat(document.getElementById("targetTemp").value);
-  await postJSON("/api/target-temp", { targetTemp: val });
+document.getElementById("btnOff")?.addEventListener("click", async () => {
+  try {
+    setFanButtonState("off");
+    setConnection(true, "Sending…");
+    await postJSON("/api/fan", { on: false });
+    setConnection(true, "Command sent");
+  } catch (e) {
+    console.error(e);
+    setConnection(false, "Error sending");
+  }
 });
 
-document.getElementById("btnEnergy").addEventListener("click", async () => {
-  const enabled = document.getElementById("energyEnabled").checked;
-  const timeoutSec = parseInt(document.getElementById("timeoutSec").value, 10);
-  await postJSON("/api/energy-saver", { enabled, timeoutSec });
+document.getElementById("btnAuto")?.addEventListener("click", async () => {
+  try {
+    setFanButtonState("auto");
+    setConnection(true, "Sending…");
+    await postJSON("/api/fan/auto");
+    setConnection(true, "Command sent");
+  } catch (e) {
+    console.error(e);
+    setConnection(false, "Error sending");
+  }
 });
+
+// THRESHHOLDS HERE
+document.getElementById("btnSetThresholds")?.addEventListener("click", async () => {
+  try {
+    const onTempEl = document.getElementById("onTemp");
+    const offTempEl = document.getElementById("offTemp");
+
+    let onTemp = parseFloat(onTempEl?.value);
+    let offTemp = parseFloat(offTempEl?.value);
+    if (!Number.isFinite(onTemp) || !Number.isFinite(offTemp)) return;
+
+    if (offTemp >= onTemp) {
+      offTemp = onTemp - 0.5;
+      if (offTempEl) offTempEl.value = offTemp.toFixed(1);
+    }
+
+    setConnection(true, "Sending…");
+    await postJSON("/api/temp-thresholds", { onTemp, offTemp });
+    setConnection(true, "Command sent");
+
+    unlockThresholds(); // just is resync
+  } catch (e) {
+    console.error(e);
+    setConnection(false, "Error sending");
+  }
+});
+
+setFanButtonState("auto");
+
+// pubnub sub to live stat
+(async function initStatus() {
+  try {
+    const infoRes = await fetch("/api/info");
+    const info = await infoRes.json();
+    const statusChannel = info.statusChannel;
+
+    const pubnub = new PubNub({
+      subscribeKey: info.subscribeKey || "sub-c-6196e5ab-b7e4-4e06-ad4b-bc25001b2587",
+      userId: "chilldog-web-ui",
+      ssl: true
+    });
+
+    pubnub.addListener({
+      status: function (s) {
+        if (s.category === "PNConnectedCategory") setConnection(true, "Live");
+      },
+      message: function (event) {
+        const data = event.message || {};
+        if (data.type !== "STATUS") return;
+
+        setConnection(true, "Live");
+
+        setClimateUI(data.temp ?? data.temperature, data.humidity);
+        setModeUI(data.mode);
+        setFanUI(!!data.fanOn, data.mode);
+
+        // lock/unlock tiles based on mode
+        const isManual = (data.mode || "").toLowerCase().includes("manual");
+        setManualLocks(isManual);
+
+        if (!editLock.onTemp && data.onTemp != null) {
+          const el = document.getElementById("onTemp");
+          if (el && document.activeElement !== el) {
+            el.value = String(parseFloat(data.onTemp).toFixed(1));
+          }
+        }
+        if (!editLock.offTemp && data.offTemp != null) {
+          const el = document.getElementById("offTemp");
+          if (el && document.activeElement !== el) {
+            el.value = String(parseFloat(data.offTemp).toFixed(1));
+          }
+        }
+
+        if (typeof data.energySaverEnabled === "boolean") {
+          if (!editLock.energyEnabled && !editLock.timeout) {
+            setEnergyUI(!!data.energySaverEnabled, data.energySaverTimeoutSec);
+          }
+        }
+      }
+    });
+
+    pubnub.subscribe({ channels: [statusChannel] });
+  } catch (e) {
+    console.error(e);
+    setConnection(false, "Status offline");
+  }
+})();
