@@ -5,11 +5,12 @@ from flask import Flask, jsonify, request, render_template
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
 
-from routes.api import init_api
+from .routes.api import init_api
 
 load_dotenv()
 
 app = Flask(__name__)
+application = app
 
 DEVICE_ID = os.getenv("DEVICE_ID", "pi-001")
 COMMANDS_CHANNEL = f"chilldog.commands.{DEVICE_ID}"
@@ -23,6 +24,7 @@ pnconfig.ssl = True
 
 pubnub = PubNub(pnconfig)
 
+# Register API routes (fan, auto, target-temp, energy-saver)
 app.register_blueprint(init_api(pubnub, COMMANDS_CHANNEL), url_prefix="")
 
 @app.get("/")
