@@ -13,3 +13,15 @@ Thumbs.db
 
 .vscode/
 .idea/
+
+
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.crt
+*.csr
+*.sqlite
+*.db
+chilldog.db*

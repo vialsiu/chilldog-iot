@@ -3,41 +3,105 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign Up • Chilldog</title>
+  <title>Create account • Chilldog</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
-  <main class="page">
-    <section class="shell" style="max-width:640px;margin:24px auto;">
-      <div class="tile tile-white">
-        <div class="tile-head">
-          <h2>Sign up</h2>
-          <span class="chip">Account</span>
+
+<body class="auth-page">
+  <div class="auth-split">
+    <aside class="auth-left" aria-hidden="true">
+      <div
+        class="auth-left-img"
+        style="background-image: url('/static/images/auth-flower.jpg');">
+      </div>
+    </aside>
+
+    <section class="auth-right">
+      <div class="auth-topbar">
+      <div class="auth-lang">
+        <span>English (United States)</span>
+        <select aria-label="Language">
+        <option>English (United States)</option>
+        <option>中文 (Chinese) (filler)</option>
+        <option>Español (Spanish) (filler)</option>
+        <option>Français (French) (filler)</option>
+        </select>
+      </div>
+
+        <div class="auth-top-actions">
+          <span>Already have an account?</span>
+          <a class="btn btn-ghost" href="/login{% if next %}?next={{ next }}{% endif %}">Sign in</a>
         </div>
+      </div>
 
-        {% if error %}
-          <p style="color:#b91c1c;margin:8px 0 16px 0;">{{ error }}</p>
-        {% endif %}
-
-	<form method="post" action="/signup{% if next %}?next={{ next }}{% endif %}" class="form-col">
-          <div class="form-row">
-            <label class="label" for="email">Email</label>
-            <input class="input" id="email" name="email" type="email" required>
+      <div class="auth-wrap">
+        <div class="auth-card">
+          <div class="auth-card-head">
+            <div class="auth-avatar"></div>
+            <h1 class="auth-title">Create an account</h1>
+            <p class="auth-subtitle">
+              Monitor and control your environment from anywhere with your Chilldog dashboard.
+            </p>
           </div>
 
-          <div class="form-row">
-            <label class="label" for="password">Password</label>
-            <input class="input" id="password" name="password" type="password" required minlength="6">
-          </div>
+          {% if error %}
+            <div class="auth-error">{{ error }}</div>
+          {% endif %}
 
-          <div class="btn-row">
-            <button class="btn btn-solid" type="submit">Create account</button>
-            <a class="btn btn-ghost" href="/login{% if next %}?next={{ next }}{% endif %}">I already have one</a>
-          </div>
-        </form>
+          <form class="auth-form" method="post" action="/signup{% if next %}?next={{ next }}{% endif %}">
+            <div class="auth-field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" required />
+            </div>
+
+            <div class="auth-field">
+              <label for="password">Password</label>
+              <input id="password" name="password" type="password" required minlength="6" />
+            </div>
+
+            <label class="auth-check">
+              <input type="checkbox" id="tos" />
+              <span>
+                By creating an account, I agree to our <u>Terms of use</u> and <u>Privacy Policy</u>
+              </span>
+            </label>
+
+            <button id="createBtn" class="auth-primary" type="submit" disabled>Create account</button>
+          </form>
+
+          <div class="auth-divider">OR</div>
+
+          <button class="auth-provider" type="button" onclick="alert('Google login is UI-only right now. Implement OAuth later if required.');">
+            <svg class="g-icon" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.2 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.2 29.3 4 24 4c-7.7 0-14.4 4.3-17.7 10.7z"/>
+              <path fill="#4CAF50" d="M24 44c5.1 0 9.8-2 13.3-5.2l-6.1-5.2C29.1 35.8 26.7 36 24 36c-5.3 0-9.7-3.4-11.3-8.1l-6.6 5.1C9.4 39.7 16.2 44 24 44z"/>
+              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1 2.6-3 4.6-5.6 5.8l6.1 5.2C39.4 36 44 31 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </div>
       </div>
     </section>
-  </main>
+  </div>
+
+  <script>
+    const tos = document.getElementById("tos");
+    const btn = document.getElementById("createBtn");
+
+    function sync() {
+      if (tos.checked) {
+        btn.disabled = false;
+        btn.classList.add("is-enabled");
+      } else {
+        btn.disabled = true;
+        btn.classList.remove("is-enabled");
+      }
+    }
+
+    tos.addEventListener("change", sync);
+    sync();
+  </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import os
+import re
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,6 +21,21 @@ DEVICE_ID = os.getenv("DEVICE_ID", "pi-001")
 COMMANDS_CHANNEL = f"chilldog.commands.{DEVICE_ID}"
 STATUS_CHANNEL = f"chilldog.status.{DEVICE_ID}"
 
+def validate_password(pw: str) -> str | None:
+    if len(pw) < 10:
+        return "Password must be at least 10 characters"
+    if " " in pw:
+        return "Password cannot contain spaces"
+    if not re.search(r"[a-z]", pw):
+        return "Password must include a lowercase letter"
+    if not re.search(r"[A-Z]", pw):
+        return "Password must include an uppercase letter"
+    if not re.search(r"\d", pw):
+        return "Password must include a number"
+    if not re.search(r"[^A-Za-z0-9]", pw):
+        return "Password must include a symbol"
+    return None
+
 pnconfig = PNConfiguration()
 pnconfig.publish_key = os.getenv("PUBNUB_PUBLISH_KEY")
 pnconfig.subscribe_key = os.getenv("PUBNUB_SUBSCRIBE_KEY")
@@ -33,7 +49,7 @@ app.register_blueprint(init_api(pubnub, COMMANDS_CHANNEL), url_prefix="")
 @app.get("/")
 def home():
     if not session.get("user_id"):
-        return redirect(url_for("login_page", next=request.path))
+        return redirect(url_for("signup_page", next="/"))
     return render_template("index.html")
 
 @app.get("/api/info")
@@ -84,9 +100,9 @@ def signup_submit():
         next_url = request.args.get("next") or "/"
         return render_template("signup.html", error="Please enter a valid email", next=next_url)
 
-    if len(password) < 6:
-        next_url = request.args.get("next") or "/"
-        return render_template("signup.html", error="Password must be at least 6 characters", next=next_url)
+    err = validate_password(password)
+    if err:
+        return render_template("signup.html", error=err, next=nxt)
 
     password_hash = generate_password_hash(password)
     ok = create_user(email, password_hash)
