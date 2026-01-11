@@ -28,13 +28,19 @@
           <span class="brand-name">CHILLDOG</span>
         </div>
 
-        <div class="auth">
-          <a class="btn btn-ghost" href="/login">Log In</a>
-          <a class="btn btn-solid" href="/signup">Get Started</a>
-          <!-- when logged in it should be smth like  this i need to do a login func
-               <a class="btn btn-ghost" href="/logout">Log Out</a>
-          -->
-        </div>
+     <div class="auth">
+       {% if session.get("user_id") %}
+         <span class="btn btn-ghost" style="pointer-events:none;opacity:.85;">
+           {{ session.get("user_email", "Logged in") }}
+         </span>
+         <a class="btn btn-solid" href="/logout">Log Out</a>
+       {% else %}
+         <a class="btn btn-ghost" href="/login">Log In</a>
+         <a class="btn btn-solid" href="/signup">Get Started</a>
+       {% endif %}
+      </div>
+
+
       </div>
     </header>
 
@@ -123,29 +129,27 @@
 
           <!-- TILE 3 -->
           <section class="tile tile-white" id="thresholdsTile">
-          <div class="tile-head">
-            <h2>Temperature thresholds</h2>
-            <span class="chip">°C</span>
-          </div>
-
-          <div class="form-col">
-            <div class="form-row">
-              <label class="label" for="onTemp">Turn fan ON at</label>
-              <input class="input" id="onTemp" type="number" step="0.5" value="24.0">
+            <div class="tile-head">
+              <h2>Temperature thresholds</h2>
+              <span class="chip">°C</span>
             </div>
 
-            <div class="form-row">
-              <label class="label" for="offTemp">Turn fan OFF at</label>
-              <input class="input" id="offTemp" type="number" step="0.5" value="23.0">
+            <div class="form-col">
+              <div class="form-row">
+                <label class="label" for="onTemp">Turn fan ON at</label>
+                <input class="input" id="onTemp" type="number" step="0.5" value="24.0">
+              </div>
+
+              <div class="form-row">
+                <label class="label" for="offTemp">Turn fan OFF at</label>
+                <input class="input" id="offTemp" type="number" step="0.5" value="23.0">
+              </div>
+
+              <div class="btn-row">
+                <button class="btn btn-solid" id="btnSetThresholds" type="button">Apply</button>
+              </div>
             </div>
-
-            <div class="btn-row">
-              <button class="btn btn-solid" id="btnSetThresholds" type="button">Apply</button>
-            </div>
-
-          </div>
-        </section>
-
+          </section>
 
           <!-- TILE 4 ENERGY SAV -->
           <section class="tile tile-white tile-wide" id="energyTile">
@@ -153,7 +157,6 @@
               <h2>Energy saver</h2>
               <span class="chip">PIR</span>
             </div>
-
 
             <div class="toggle-row">
               <label class="toggle">
@@ -175,12 +178,7 @@
                 <button class="seg-btn" type="button" data-timeout="900">15m</button>
                 <button class="seg-btn" type="button" data-timeout="1800">30m</button>
               </div>
-
             </div>
-            <!-- <div class="btn-row">
-              <button class="btn btn-solid" id="btnEnergy" type="button">Apply</button>
-            </div> -->
-
           </section>
 
           <!-- TILE 5 PLACEHOLDER IDK WHAT FOR YET  -->
@@ -196,7 +194,6 @@
               <li>HTTPS (Let’s Encrypt)</li>
               <li>AWS + Route 53 on chilldog.online</li>
             </ul>
-
           </section>
         </div>
       </section>
@@ -204,6 +201,5 @@
 
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.6.3.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-
   </body>
 </html>

@@ -1,16 +1,20 @@
 import os
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, render_template
-
+from flask import Flask, jsonify, request, render_template, redirect, url_for, session
+from werkzeug.security import generate_password_hash, check_password_hash
+from .auth_db import init_db, create_user, get_user_by_email
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
-
 from .routes.api import init_api
 
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "chilldog-dev-secret")
 application = app
+app.config["PROPAGATE_EXCEPTIONS"] = True
+
+init_db()
 
 DEVICE_ID = os.getenv("DEVICE_ID", "pi-001")
 COMMANDS_CHANNEL = f"chilldog.commands.{DEVICE_ID}"
@@ -24,11 +28,12 @@ pnconfig.ssl = True
 
 pubnub = PubNub(pnconfig)
 
-# Register API routes (fan, auto, target-temp, energy-saver)
 app.register_blueprint(init_api(pubnub, COMMANDS_CHANNEL), url_prefix="")
 
 @app.get("/")
 def home():
+    if not session.get("user_id"):
+        return redirect(url_for("login_page", next=request.path))
     return render_template("index.html")
 
 @app.get("/api/info")
@@ -39,6 +44,68 @@ def api_info():
         "statusChannel": STATUS_CHANNEL,
         "subscribeKey": pnconfig.subscribe_key
     })
+
+@app.get("/login")
+def login_page():
+    if session.get("user_id"):
+        return redirect(url_for("home"))
+    next_url = request.args.get("next") or "/"
+    return render_template("login.html", error=None, next=next_url)
+
+@app.post("/login")
+def login_submit():
+    email = (request.form.get("email") or "").strip().lower()
+    password = request.form.get("password") or ""
+
+    user = get_user_by_email(email)
+    if not user or not check_password_hash(user["password_hash"], password):
+        next_url = request.args.get("next") or "/"
+        return render_template("login.html", error="Invalid email or password", next=next_url)
+
+    session["user_id"] = user["id"]
+    session["user_email"] = user["email"]
+
+    next_url = request.args.get("next") or url_for("home")
+    return redirect(next_url)
+
+@app.get("/signup")
+def signup_page():
+    if session.get("user_id"):
+        return redirect(url_for("home"))
+    next_url = request.args.get("next") or "/"
+    return render_template("signup.html", error=None, next=next_url)
+
+@app.post("/signup")
+def signup_submit():
+    email = (request.form.get("email") or "").strip().lower()
+    password = request.form.get("password") or ""
+
+    if not email or "@" not in email:
+        next_url = request.args.get("next") or "/"
+        return render_template("signup.html", error="Please enter a valid email", next=next_url)
+
+    if len(password) < 6:
+        next_url = request.args.get("next") or "/"
+        return render_template("signup.html", error="Password must be at least 6 characters", next=next_url)
+
+    password_hash = generate_password_hash(password)
+    ok = create_user(email, password_hash)
+
+    if not ok:
+        next_url = request.args.get("next") or "/"
+        return render_template("signup.html", error="That email is already registered", next=next_url)
+
+    user = get_user_by_email(email)
+    session["user_id"] = user["id"]
+    session["user_email"] = user["email"]
+
+    next_url = request.args.get("next") or url_for("home")
+    return redirect(next_url)
+
+@app.get("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login_page"))
 
 if __name__ == "__main__":
     app.run(debug=True)
