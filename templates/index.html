@@ -28,24 +28,24 @@
           <span class="brand-name">CHILLDOG</span>
         </div>
 
-     <div class="auth">
-       {% if session.get("user_id") %}
-         <span class="btn btn-ghost" style="pointer-events:none;opacity:.85;">
-           {{ session.get("user_email", "Logged in") }}
-         </span>
-         <a class="btn btn-solid" href="/logout">Log Out</a>
-       {% else %}
-         <a class="btn btn-ghost" href="/login">Log In</a>
-         <a class="btn btn-solid" href="/signup">Get Started</a>
-       {% endif %}
-      </div>
-
-
+        <div class="auth">
+          {% if session.get("user_id") %}
+            <span class="btn btn-ghost" style="pointer-events:none;opacity:.85;">
+              {{ session.get("user_email", "Logged in") }}
+            </span>
+            <a class="btn btn-solid" href="/logout">Log Out</a>
+          {% else %}
+            <a class="btn btn-ghost" href="/login">Log In</a>
+            <a class="btn btn-solid" href="/signup">Get Started</a>
+          {% endif %}
+        </div>
       </div>
     </header>
 
     <main class="page">
       <section class="shell">
+
+        <!-- HERO -->
         <div class="hero">
           <div class="hero-left">
             <h1>Your Ultimate Temperature<br>Management Solution</h1>
@@ -68,9 +68,11 @@
           </div>
         </div>
 
-        <div class="tiles">
-          <!-- TILE 1 HERE -->
-          <section class="tile tile-white">
+        <!-- TOP ROW (3 perfect tiles) -->
+        <div class="tiles tiles-top">
+
+          <!-- LIVE CLIMATE -->
+          <section class="tile tile-white" id="climateTile">
             <div class="tile-head">
               <h2>Live climate</h2>
               <span class="chip">Sensor</span>
@@ -79,12 +81,16 @@
             <div class="metric-grid">
               <div class="metric">
                 <div class="metric-label">Temperature</div>
-                <div class="metric-value"><span id="temp">--</span><span class="unit">°C</span></div>
+                <div class="metric-value">
+                  <span id="temp">--</span><span class="unit">°C</span>
+                </div>
               </div>
 
               <div class="metric">
                 <div class="metric-label">Humidity</div>
-                <div class="metric-value"><span id="hum">--</span><span class="unit">%</span></div>
+                <div class="metric-value">
+                  <span id="hum">--</span><span class="unit">%</span>
+                </div>
               </div>
 
               <div class="metric small">
@@ -99,7 +105,7 @@
             </div>
           </section>
 
-          <!-- TILE 2 HERE ANIMATED SVG LIKE ON YT VID -->
+          <!-- FAN CONTROL -->
           <section class="tile tile-dark fan-tile" id="fanTile">
             <div class="tile-head">
               <h2>Fan</h2>
@@ -107,7 +113,7 @@
             </div>
 
             <div class="fan-visual" aria-hidden="true">
-              <svg class="fan-svg" viewBox="0 0 200 200" role="img" aria-label="Fan icon">
+              <svg class="fan-svg" viewBox="0 0 200 200" aria-label="Fan icon">
                 <circle cx="100" cy="100" r="14" class="fan-hub"></circle>
                 <g class="fan-blades">
                   <path d="M100 26c22 0 34 18 28 34-6 16-26 20-48 10-10-4-18-10-18-18 0-14 18-26 38-26z" class="fan-blade"/>
@@ -124,10 +130,9 @@
               <button class="btn btn-ghost" id="btnOff" type="button">Turn OFF</button>
               <button class="btn btn-ghost" id="btnAuto" type="button">AUTO</button>
             </div>
-
           </section>
 
-          <!-- TILE 3 -->
+          <!-- THRESHOLDS -->
           <section class="tile tile-white" id="thresholdsTile">
             <div class="tile-head">
               <h2>Temperature thresholds</h2>
@@ -146,12 +151,19 @@
               </div>
 
               <div class="btn-row">
-                <button class="btn btn-solid" id="btnSetThresholds" type="button">Apply</button>
+                <button class="btn btn-solid" id="btnSetThresholds" type="button">
+                  Apply
+                </button>
               </div>
             </div>
           </section>
 
-          <!-- TILE 4 ENERGY SAV -->
+        </div>
+
+        <!-- BOTTOM (full width tiles) -->
+        <div class="tiles tiles-bottom">
+
+          <!-- ENERGY SAVER -->
           <section class="tile tile-white tile-wide" id="energyTile">
             <div class="tile-head">
               <h2>Energy saver</h2>
@@ -168,34 +180,37 @@
 
             <div class="timeout-block">
               <div class="label">Turn off after no motion</div>
-
-              <div class="segmented" role="group" aria-label="Energy saver timeout">
-                <button class="seg-btn" type="button" data-timeout="30">30s</button>
-                <button class="seg-btn" type="button" data-timeout="60">1m</button>
-                <button class="seg-btn is-active" type="button" data-timeout="120">2m</button>
-                <button class="seg-btn" type="button" data-timeout="300">5m</button>
-                <button class="seg-btn" type="button" data-timeout="600">10m</button>
-                <button class="seg-btn" type="button" data-timeout="900">15m</button>
-                <button class="seg-btn" type="button" data-timeout="1800">30m</button>
+              <div class="segmented" role="group">
+                <button class="seg-btn" data-timeout="30">30s</button>
+                <button class="seg-btn" data-timeout="60">1m</button>
+                <button class="seg-btn is-active" data-timeout="120">2m</button>
+                <button class="seg-btn" data-timeout="300">5m</button>
+                <button class="seg-btn" data-timeout="600">10m</button>
+                <button class="seg-btn" data-timeout="900">15m</button>
+                <button class="seg-btn" data-timeout="1800">30m</button>
               </div>
             </div>
           </section>
 
-          <!-- TILE 5 PLACEHOLDER IDK WHAT FOR YET  -->
-          <section class="tile tile-dark" id="security">
+          <!-- FAN EVENTS -->
+          <section class="tile tile-white tile-wide" id="eventsTile">
             <div class="tile-head">
-              <h2>Security</h2>
-              <span class="chip chip-dark">Planned</span>
+              <h2>Fan activity</h2>
+              <span class="chip" id="eventsChip">Live</span>
             </div>
 
-            <ul class="list">
-              <li>Login / signup pages</li>
-              <li>PubNub PAM tokens</li>
-              <li>HTTPS (Let’s Encrypt)</li>
-              <li>AWS + Route 53 on chilldog.online</li>
-            </ul>
+            <div class="events-meta">
+              <div class="events-sub">
+                Auto-updating log of fan ON/OFF events
+              </div>
+            </div>
+
+            <div id="eventsEmpty" class="events-empty">No events yet.</div>
+            <div class="events-list" id="eventsList" aria-live="polite"></div>
           </section>
+
         </div>
+
       </section>
     </main>
 

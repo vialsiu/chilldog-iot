@@ -5,23 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sign in • Chilldog</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icon.png') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css', v=7) }}">
 </head>
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 
-<body class="auth-page">
+  <body class="auth-page">
   <div class="auth-split">
-    <aside class="auth-left" aria-hidden="true">
-      <div class="auth-left-img" style="background-image:url('/static/images/auth-flower.jpg');"></div>
-    </aside>
+  <aside class="auth-left" aria-hidden="true">
+    <div
+      class="auth-left-img"
+      style="background-image: url('/static/images/auth-flower.jpg?v=4');">
+    </div>
+  </aside>
+
 
     <section class="auth-right">
       <div class="auth-topbar">
-        <div class="auth-lang">
-          <span>English (United States)</span>
-          <select aria-label="Language">
-            <option>▼</option>
-          </select>
-        </div>
+      <div class="auth-lang">
+        <select aria-label="Language">
+        <option>English (United States)</option>
+        <option>中文 (Chinese) (filler)</option>
+        <option>Español (Spanish) (filler)</option>
+        <option>Français (French) (filler)</option>
+        </select>
+      </div>
 
         <div class="auth-top-actions">
           <span>Don't have an account?</span>
@@ -49,17 +57,24 @@
               <input id="email" name="email" type="email" required />
             </div>
 
-            <div class="auth-field">
-              <label for="password">Password</label>
-              <input id="password" name="password" type="password" required />
-            </div>
+              <div class="auth-field">
+                <label for="password">Password</label>
+
+                <div class="pw-wrap">
+                  <input id="password" name="password" type="password" required minlength="6" />
+                  <button class="pw-toggle" type="button" aria-label="Show password" onclick="togglePw(this)">
+                    Show
+                  </button>
+                </div>
+              </div>
 
             <button class="auth-primary is-enabled" type="submit">Sign in</button>
           </form>
 
-          <div class="auth-divider">OR</div>
+<div class="auth-divider">OR</div>
 
-          <button class="auth-provider" type="button" onclick="alert('Google login is UI-only right now. Implement OAuth later if required.');">
+          <a class="auth-provider"
+            href="/login/google{% if next %}?next={{ next|urlencode }}{% endif %}">
             <svg class="g-icon" viewBox="0 0 48 48" aria-hidden="true">
               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.2 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
               <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.2 29.3 4 24 4c-7.7 0-14.4 4.3-17.7 10.7z"/>
@@ -67,7 +82,7 @@
               <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1 2.6-3 4.6-5.6 5.8l6.1 5.2C39.4 36 44 31 44 24c0-1.3-.1-2.7-.4-3.5z"/>
             </svg>
             Continue with Google
-          </button>
+          </a>
         </div>
       </div>
     </section>

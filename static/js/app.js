@@ -329,6 +329,12 @@ setFanButtonState("auto");
             setEnergyUI(!!data.energySaverEnabled, data.energySaverTimeoutSec);
           }
         }
+
+        fetch("/api/ingest-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        }).catch(() => {});
       }
     });
 
@@ -338,3 +344,50 @@ setFanButtonState("auto");
     setConnection(false, "Status offline");
   }
 })();
+
+function fmtTime(ts) {
+  try {
+    const d = new Date((ts || 0) * 1000);
+    return d.toLocaleString();
+  } catch {
+    return String(ts || "");
+  }
+}
+
+function renderEvents(events) {
+  const list = document.getElementById("eventsList");
+  if (!list) return;
+
+  if (!events || events.length === 0) {
+    list.innerHTML = `<div class="events-empty">No events yet.</div>`;
+    return;
+  }
+
+  list.innerHTML = events.map(e => {
+    const title = e.event === "FAN_ON" ? "Fan turned ON" : "Fan turned OFF";
+    const temp = (e.temp == null) ? "NA" : Number(e.temp).toFixed(1) + "°C";
+    const hum = (e.humidity == null) ? "NA" : Number(e.humidity).toFixed(1) + "%";
+    const mode = e.mode || "—";
+    return `
+      <div class="event-row">
+        <div class="event-top">
+          <div class="event-title">${title}</div>
+          <div class="event-time">${fmtTime(e.ts)}</div>
+        </div>
+        <div class="event-sub">Temp ${temp} • Hum ${hum} • Mode ${mode}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function pollFanEvents() {
+  try {
+    const res = await fetch("/api/fan-events?limit=25", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderEvents(data.events || []);
+  } catch {}
+}
+
+pollFanEvents();
+setInterval(pollFanEvents, 4000);

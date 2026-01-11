@@ -1,5 +1,5 @@
 :root{
-  --page-bg: #cfcac7;
+  --page-bg: #bbc4bb;
   --shell-bg: #efecea;
 
   --tile-white: #ffffff;
@@ -9,7 +9,7 @@
   --muted: rgba(31,41,55,.68);
   --border: rgba(31,41,55,.10);
 
-  --accent: #5a463c;
+  --accent: #b9aeb7;
   --accent-ink: #ffffff;
 
   --radius-lg: 26px;
@@ -18,7 +18,6 @@
 
   --brand-blue: #2f6fed;
 }
-
 
 *{ box-sizing: border-box; }
 
@@ -176,7 +175,6 @@ body{
   background: #9ca3af;
 }
 
-/* TILES GRID STARTS HERE FOR REFERENCE */
 .tiles{
   display:grid;
   gap: 16px;
@@ -184,13 +182,16 @@ body{
   align-items: stretch;
 }
 
+.tiles-bottom{ margin-top: 16px; }
+
+/* TILES */
 .tile{
   border-radius: 22px;
   padding: 16px;
   box-shadow: var(--shadow);
   border: 1px solid rgba(0,0,0,.04);
   min-height: 180px;
-  position:relative
+  position:relative;
 }
 
 .tile-white{
@@ -203,13 +204,6 @@ body{
   color: rgba(255,255,255,.92);
   border-color: rgba(255,255,255,.06);
 }
-
-/* the layout */
-.tiles > section:nth-child(1){ grid-column: span 4; }
-.tiles > section:nth-child(2){ grid-column: span 4; }
-.tiles > section:nth-child(3){ grid-column: span 4; }
-.tiles > section:nth-child(4){ grid-column: span 8; }
-.tiles > section:nth-child(5){ grid-column: span 4; }
 
 .tile-wide{ min-height: 230px; }
 
@@ -246,14 +240,22 @@ h2{
   color: rgba(255,255,255,.85);
 }
 
-/* METRICS IS HERE */
+/* LAYOUT */
+.tiles-top > #climateTile    { grid-column: span 4; }
+.tiles-top > #fanTile        { grid-column: span 4; }
+.tiles-top > #thresholdsTile { grid-column: span 4; }
+.tiles-bottom > #energyTile  { grid-column: 1 / -1; }
+.tiles-bottom > #eventsTile  { grid-column: 1 / -1; }
+
+/*LIVE CLIMATE METRICS */
 .metric-grid{
   display:grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
 .metric{
+  min-width: 0;
   border: 1px solid rgba(31,41,55,.10);
   background: rgba(237,235,233,.35);
   border-radius: 18px;
@@ -295,14 +297,24 @@ h2{
   font-weight: 850;
 }
 
+#thresholdsTile .form-row{
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+#thresholdsTile .input{
+  width: 100%;
+  min-width: 0;
+}
+
+/* forms and BUTTONS here */
 .form-col{
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-
-/* INPUTS, BUTTONS HERE */
 .form-row{
   display:flex;
   align-items:center;
@@ -374,8 +386,6 @@ h2{
   border-color: transparent !important;
 }
 
-
-
 .btn-ghost{
   background: rgba(255,255,255,.82);
   color: rgba(31,41,55,.78);
@@ -387,7 +397,6 @@ h2{
   color: rgba(255,255,255,.90);
 }
 
-/* TOGGLE HERE */
 .toggle-row{ margin: 6px 0 10px; }
 
 .toggle{
@@ -413,13 +422,14 @@ h2{
 .toggle-ui::after{
   content:"";
   position:absolute;
-  top: 3px;
+  top: 50%;
   left: 3px;
   width: 22px;
   height: 22px;
   border-radius: 999px;
   background: #fff;
   border: 1px solid rgba(31,41,55,.12);
+  transform: translateY(-50%);
   transition: transform .15s ease;
 }
 
@@ -429,7 +439,7 @@ h2{
 }
 
 .toggle input:checked + .toggle-ui::after{
-  transform: translateX(18px);
+  transform: translate(18px, -50%);
 }
 
 .toggle-text{
@@ -462,6 +472,7 @@ h2{
 /* FAN ROTATING SVG HERE
 https://youtu.be/Qcvs0o3okSo?si=HX8YJwqwAdr0-oTz
 REFERENCE VID */
+
 .fan-visual{
   height: 120px;
   border-radius: 18px;
@@ -491,27 +502,71 @@ REFERENCE VID */
   to{ transform: rotate(360deg); }
 }
 
-/* TEXT HELP ER HERE */
-.tile-hint{
-  margin-top: 10px;
+/* EVENTS */
+.events-meta{
+  margin-top: -6px;
+  margin-bottom: 10px;
+}
+
+.events-sub{
   font-size: 12px;
-  line-height: 1.35;
-  color: rgba(210, 210, 210, 0.65);
+  color: rgba(31,41,55,.60);
+  font-weight: 700;
 }
 
-.tile-hint-dark{
-  color: rgba(255,255,255,.70);
+.events-list{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 6px;
 }
 
-.list{
-  margin: 0;
-  padding-left: 18px;
-  color: rgba(255,255,255,.86);
+.events-empty{
   font-size: 13px;
-  line-height: 1.6;
+  font-weight: 750;
+  color: rgba(31,41,55,.55);
+  padding: 12px;
+  border: 1px dashed rgba(31,41,55,.18);
+  border-radius: 16px;
+  background: rgba(237,235,233,.25);
 }
 
-/* RESPONSIVENESS */
+.event-row{
+  border: 1px solid rgba(31,41,55,.10);
+  background: rgba(237,235,233,.35);
+  border-radius: 16px;
+  padding: 10px 12px;
+}
+
+.event-top{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 10px;
+}
+
+.event-title{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(31,41,55,.85);
+}
+
+.event-time{
+  font-weight: 800;
+  font-size: 12px;
+  color: rgba(31,41,55,.55);
+  white-space: nowrap;
+}
+
+.event-sub{
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 750;
+  color: rgba(31,41,55,.62);
+}
+
 @media (max-width: 1050px){
   .hero{
     flex-direction: column;
@@ -524,11 +579,14 @@ REFERENCE VID */
   .tiles{
     grid-template-columns: repeat(6, 1fr);
   }
-  .tiles > section:nth-child(1){ grid-column: span 6; }
-  .tiles > section:nth-child(2){ grid-column: span 6; }
-  .tiles > section:nth-child(3){ grid-column: span 6; }
-  .tiles > section:nth-child(4){ grid-column: span 6; }
-  .tiles > section:nth-child(5){ grid-column: span 6; }
+
+  .tiles-top > #climateTile,
+  .tiles-top > #fanTile,
+  .tiles-top > #thresholdsTile,
+  .tiles-bottom > #energyTile,
+  .tiles-bottom > #eventsTile{
+    grid-column: 1 / -1;
+  }
 
   .hero-left h1{
     font-size: 40px;
@@ -541,13 +599,13 @@ REFERENCE VID */
   .metric-grid{ grid-template-columns: 1fr; }
 }
 
+/* LOCKED STATE */
 .tile.is-locked{
   background-color: #b1b1b1 !important;
   opacity: 0.8;
-    cursor: not-allowed;
-      pointer-events: none;
+  cursor: not-allowed;
+  pointer-events: none;
   filter: blur(0.5px);
-
 }
 
 .tile.is-locked::after{
@@ -583,7 +641,7 @@ REFERENCE VID */
   z-index: 1;
 }
 
-/* I DO AUTH DEISNIGN HERE */
+/* AUTH FROM HERE */
 .auth-page{
   min-height: 100vh;
   background: #ffffff;
@@ -592,7 +650,7 @@ REFERENCE VID */
 
 .auth-split{
   display: grid;
-  grid-template-columns: 38% 62%;
+  grid-template-columns: 20% 80%;
   min-height: 100vh;
 }
 
@@ -674,12 +732,16 @@ REFERENCE VID */
 }
 
 .auth-card{
-  width: min(520px, 92%);
-  background: rgba(255,255,255,.94);
+  width: min(440px, 92%);
+  min-height: 600px;
+  background: rgba(255,255,255,.96);
   border: 1px solid rgba(31,41,55,.12);
   border-radius: 26px;
-  box-shadow: 0 20px 50px rgba(0,0,0,.08);
-  padding: 28px 28px 24px;
+  box-shadow: none;
+  padding: 40px 30px 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .auth-card-head{
@@ -687,13 +749,13 @@ REFERENCE VID */
   flex-direction: column;
   align-items:center;
   text-align:center;
-  gap: 10px;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 26px;
 }
 
 .auth-avatar{
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   background: #fff;
   border: 1px solid rgba(31,41,55,.14);
@@ -705,17 +767,17 @@ REFERENCE VID */
   opacity: .95;
 }
 
-
 .auth-title{
   margin: 0;
-  font-size: 32px;
+  font-size: 34px;
   letter-spacing: -0.3px;
   font-weight: 850;
   color: rgba(31,41,55,.86);
 }
 
 .auth-subtitle{
-  margin: 0;
+  margin-top: 2px;
+  margin-bottom: 6px;
   max-width: 380px;
   font-size: 13px;
   line-height: 1.5;
@@ -725,8 +787,8 @@ REFERENCE VID */
 .auth-form{
   display:flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 10px;
+  gap: 14px;
+  margin-top: 6px;
 }
 
 .auth-field label{
@@ -815,6 +877,18 @@ REFERENCE VID */
   gap: 10px;
   font-weight: 850;
   cursor: pointer;
+  text-decoration: none;
+  color: rgba(31,41,55,.85);
+}
+
+.auth-provider:visited{
+  color: rgba(31,41,55,.85);
+}
+
+.auth-provider:hover{
+  background: rgba(237,235,233,.55);
+  border-color: rgba(31,41,55,.22);
+  text-decoration: none;
 }
 
 .g-icon{
@@ -828,4 +902,33 @@ REFERENCE VID */
   margin: 8px 0 0;
   font-weight: 750;
   font-size: 13px;
+}
+
+.pw-wrap{
+  position: relative;
+  display:flex;
+  align-items:center;
+}
+
+.pw-wrap input{
+  padding-right: 86px;
+}
+
+.pw-toggle{
+  position:absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: rgba(31,41,55,.62);
+  font-weight: 850;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+
+.pw-toggle:hover{
+  background: rgba(237,235,233,.75);
+  color: rgba(31,41,55,.78);
 }
