@@ -8,6 +8,15 @@
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens)
 ![Raspberry%20Pi](https://img.shields.io/badge/Raspberry%20Pi-Zero%202W-C51A4A?style=for-the-badge&logo=raspberrypi)
 
+---
+
+<img width="2554" height="1439" alt="Login" src="https://github.com/user-attachments/assets/16672fce-f762-42e7-a6ff-7b99b21e4911" />
+
+<img width="2523" height="1439" alt="Dashboard" src="https://github.com/user-attachments/assets/c72764a3-f033-4d14-abc0-f4d3a4512f7f" />
+
+
+---
+
 | Component | Repository |
 | --------- | ---------- |
 | **Backend (Flask / API / Database)** | https://github.com/vialsiu/chilldog-iot |
@@ -27,7 +36,6 @@
 | **Hardware** | Raspberry Pi 4 |
 
 ---
-
 ## What This System Does
 
 ### 1. Environmental Monitoring (IoT Device)
