@@ -70,6 +70,9 @@
 
 ## System Architecture
 
+<img width="1948" height="1192" alt="Data in Transit Diagram" src="https://github.com/user-attachments/assets/09cf646e-4080-4b82-b537-fd8f29db03b5" />
+
+
 ```
 
 Raspberry Pi
