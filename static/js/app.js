@@ -1,5 +1,16 @@
 let selectedTimeoutSec = 120;
 
+let ACCESS_TOKEN = null;
+
+async function getToken() {
+  if (ACCESS_TOKEN) return ACCESS_TOKEN;
+  const res = await fetch("/api/token");
+  if (!res.ok) return null;
+  const data = await res.json();
+  ACCESS_TOKEN = data.access_token;
+  return ACCESS_TOKEN;
+}
+
 const editLock = {
   onTemp: false,
   offTemp: false,
@@ -54,16 +65,15 @@ if (energyEl) {
 
 // helper is here
 async function postJSON(url, body) {
+  const token = await getToken();
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body || {})
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(body)
   });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(txt || "Request failed");
-  }
   return res.json();
 }
 
@@ -330,11 +340,7 @@ setFanButtonState("auto");
           }
         }
 
-        fetch("/api/ingest-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }).catch(() => {});
+        postJSON("/api/ingest-status", data);
       }
     });
 
@@ -382,7 +388,11 @@ function renderEvents(events) {
 
 async function pollFanEvents() {
   try {
-    const res = await fetch("/api/fan-events?limit=25", { cache: "no-store" });
+    const token = await getToken();
+    const res = await fetch("/api/fan-events?limit=25", {
+      cache: "no-store",
+      headers: token ? { "Authorization": `Bearer ${token}` } : {}
+    });
     if (!res.ok) return;
     const data = await res.json();
     renderEvents(data.events || []);

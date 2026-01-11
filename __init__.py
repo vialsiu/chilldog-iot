@@ -4,24 +4,36 @@ from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from .auth_db import init_db, create_user, get_user_by_email
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
+
+from .auth_db import init_db, create_user, get_user_by_email
 from .routes.api import init_api
 from .iot_db import init_iot_tables, insert_status_and_maybe_event, fetch_fan_events
 
-load_dotenv()
+# IMPORTANT: load dotenv by absolute path so Apache/mod_wsgi always sees it
+load_dotenv("/var/www/FlaskApp/FlaskApp/.env")
+
+print("CHILLDOG INIT LOADED (JWTManager attached)", flush=True)
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "chilldog-dev-secret")
 application = app
+
+app.secret_key = os.getenv("SECRET_KEY", "chilldog-dev-secret")
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
+# JWT config
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "change-me")
+jwt = JWTManager(app)
+
+# init DB tables (RDS)
 init_db()
 init_iot_tables()
 
+# OAuth
 oauth = OAuth(app)
-
 google = oauth.register(
     name="google",
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
@@ -30,9 +42,20 @@ google = oauth.register(
     client_kwargs={"scope": "openid email profile"},
 )
 
+# PubNub config
 DEVICE_ID = os.getenv("DEVICE_ID", "pi-001")
 COMMANDS_CHANNEL = f"chilldog.commands.{DEVICE_ID}"
 STATUS_CHANNEL = f"chilldog.status.{DEVICE_ID}"
+
+pnconfig = PNConfiguration()
+pnconfig.publish_key = os.getenv("PUBNUB_PUBLISH_KEY")
+pnconfig.subscribe_key = os.getenv("PUBNUB_SUBSCRIBE_KEY")
+pnconfig.user_id = os.getenv("PUBNUB_USER_ID", "chilldog-web")
+pnconfig.ssl = True
+
+pubnub = PubNub(pnconfig)
+app.register_blueprint(init_api(pubnub, COMMANDS_CHANNEL), url_prefix="")
+
 
 def validate_password(pw: str) -> str | None:
     if len(pw) < 10:
@@ -49,15 +72,6 @@ def validate_password(pw: str) -> str | None:
         return "Password must include a symbol"
     return None
 
-pnconfig = PNConfiguration()
-pnconfig.publish_key = os.getenv("PUBNUB_PUBLISH_KEY")
-pnconfig.subscribe_key = os.getenv("PUBNUB_SUBSCRIBE_KEY")
-pnconfig.user_id = os.getenv("PUBNUB_USER_ID", "chilldog-web")
-pnconfig.ssl = True
-
-pubnub = PubNub(pnconfig)
-
-app.register_blueprint(init_api(pubnub, COMMANDS_CHANNEL), url_prefix="")
 
 @app.get("/")
 def home():
@@ -65,14 +79,18 @@ def home():
         return redirect(url_for("signup_page", next="/"))
     return render_template("index.html")
 
+
 @app.get("/api/info")
 def api_info():
-    return jsonify({
-        "deviceId": DEVICE_ID,
-        "commandsChannel": COMMANDS_CHANNEL,
-        "statusChannel": STATUS_CHANNEL,
-        "subscribeKey": pnconfig.subscribe_key
-    })
+    return jsonify(
+        {
+            "deviceId": DEVICE_ID,
+            "commandsChannel": COMMANDS_CHANNEL,
+            "statusChannel": STATUS_CHANNEL,
+            "subscribeKey": pnconfig.subscribe_key,
+        }
+    )
+
 
 @app.get("/login")
 def login_page():
@@ -81,11 +99,11 @@ def login_page():
     next_url = request.args.get("next") or "/"
     return render_template("login.html", error=None, next=next_url)
 
+
 @app.post("/login")
 def login_submit():
     email = (request.form.get("email") or "").strip().lower()
     password = request.form.get("password") or ""
-
     next_url = request.args.get("next") or "/"
 
     user = get_user_by_email(email)
@@ -94,8 +112,10 @@ def login_submit():
 
     session["user_id"] = user["id"]
     session["user_email"] = user["email"]
+    session["jwt"] = create_access_token(identity=str(user["id"]))
 
     return redirect(next_url)
+
 
 @app.get("/signup")
 def signup_page():
@@ -104,11 +124,11 @@ def signup_page():
     next_url = request.args.get("next") or "/"
     return render_template("signup.html", error=None, next=next_url)
 
+
 @app.post("/signup")
 def signup_submit():
     email = (request.form.get("email") or "").strip().lower()
     password = request.form.get("password") or ""
-
     next_url = request.args.get("next") or "/"
 
     if not email or "@" not in email:
@@ -120,20 +140,22 @@ def signup_submit():
 
     password_hash = generate_password_hash(password)
     ok = create_user(email, password_hash)
-
     if not ok:
         return render_template("signup.html", error="That email is already registered", next=next_url)
 
     user = get_user_by_email(email)
     session["user_id"] = user["id"]
     session["user_email"] = user["email"]
+    session["jwt"] = create_access_token(identity=str(user["id"]))
 
     return redirect(next_url)
+
 
 @app.get("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login_page"))
+
 
 @app.get("/login/google")
 def login_google():
@@ -141,6 +163,7 @@ def login_google():
     session["oauth_next"] = next_url
     redirect_uri = url_for("auth_google_callback", _external=True, _scheme="https")
     return google.authorize_redirect(redirect_uri)
+
 
 @app.get("/auth/google/callback")
 def auth_google_callback():
@@ -154,7 +177,6 @@ def auth_google_callback():
         return redirect(url_for("login_page"))
 
     user = get_user_by_email(email)
-
     if not user:
         random_pw = os.urandom(24).hex()
         password_hash = generate_password_hash(random_pw)
@@ -163,33 +185,49 @@ def auth_google_callback():
 
     session["user_id"] = user["id"]
     session["user_email"] = user["email"]
+    session["jwt"] = create_access_token(identity=str(user["id"]))
 
     next_url = session.pop("oauth_next", "/")
     return redirect(next_url)
 
+
+@app.get("/api/token")
+def api_token():
+    if not session.get("user_id") or not session.get("jwt"):
+        return jsonify({"error": "unauthorized"}), 401
+    return jsonify({"access_token": session["jwt"]})
+
+
 @app.post("/api/ingest-status")
+@jwt_required()
 def ingest_status():
-    if not session.get("user_id"):
+    identity = get_jwt_identity()
+    user_id = int(identity) if identity is not None else 0
+    if not user_id:
         return jsonify({"error": "unauthorized"}), 401
 
     data = request.get_json(silent=True) or {}
     if (data.get("type") or "").upper() != "STATUS":
         return jsonify({"error": "invalid payload type"}), 400
 
-    ok, event = insert_status_and_maybe_event(data)
+    ok, event = insert_status_and_maybe_event(user_id, data)
     return jsonify({"ok": ok, "event": event})
 
+
 @app.get("/api/fan-events")
+@jwt_required()
 def api_fan_events():
-    if not session.get("user_id"):
+    identity = get_jwt_identity()
+    user_id = int(identity) if identity is not None else 0
+    if not user_id:
         return jsonify({"error": "unauthorized"}), 401
 
     device_id = request.args.get("deviceId") or DEVICE_ID
-    limit = request.args.get("limit") or 20
-    events = fetch_fan_events(device_id, int(limit))
+    limit = int(request.args.get("limit") or 20)
+
+    events = fetch_fan_events(user_id, device_id, limit)
     return jsonify({"deviceId": device_id, "events": events})
 
 
 if __name__ == "__main__":
     app.run(debug=True)
-

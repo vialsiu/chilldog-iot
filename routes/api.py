@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from typing import Any
-
+from flask_jwt_extended import jwt_required
 
 def init_api(pubnub: Any, commands_channel: str):
     api = Blueprint("api", __name__)
@@ -10,6 +10,7 @@ def init_api(pubnub: Any, commands_channel: str):
         return envelope.result.timetoken
 
     @api.post("/api/fan")
+    @jwt_required()
     def set_fan():
         data = request.get_json(force=True)
         fan_on = bool(data.get("on", False))
@@ -18,12 +19,14 @@ def init_api(pubnub: Any, commands_channel: str):
         return jsonify({"status": "sent", "channel": commands_channel, "timetoken": timetoken, "message": message})
 
     @api.post("/api/fan/auto")
+    @jwt_required()
     def fan_auto():
         message = {"type": "CLEAR_MANUAL_OVERRIDE", "source": "chilldog-web"}
         timetoken = publish_command(message)
         return jsonify({"status": "sent", "channel": commands_channel, "timetoken": timetoken, "message": message})
 
     @api.post("/api/energy-saver")
+    @jwt_required()
     def set_energy_saver():
         data = request.get_json(force=True)
         enabled = bool(data.get("enabled", False))
@@ -33,6 +36,7 @@ def init_api(pubnub: Any, commands_channel: str):
         return jsonify({"status": "sent", "channel": commands_channel, "timetoken": timetoken, "message": message})
 
     @api.post("/api/temp-thresholds")
+    @jwt_required()
     def set_temp_thresholds():
         data = request.get_json(force=True)
         on_temp = float(data.get("onTemp"))
